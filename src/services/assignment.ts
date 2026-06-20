@@ -5,6 +5,20 @@ export interface AssignmentResult {
   optometrist: Optometrist;
   score: number;
   reason: string;
+  details: {
+    loadScore: number;
+    loadReason: string;
+    ratingScore: number;
+    expScore: number;
+    fragmentScore: number;
+    fragmentReason: string;
+    workTimeMatch: boolean;
+    workTimeReason: string;
+  };
+}
+
+export interface CandidateResult extends AssignmentResult {
+  rank: number;
 }
 
 export const assignmentService = {
@@ -15,17 +29,39 @@ export const assignmentService = {
     startTime: string,
     endTime: string
   ): AssignmentResult | null {
-    console.log('[Assignment] 开始智能分配:', { date, startTime, endTime });
+    const candidates = assignmentService.getCandidateList(optometrists, appointments, date, startTime, endTime);
+    return candidates.length > 0 ? candidates[0] : null;
+  },
 
-    const availableOptometrists = optometrists.filter((opt) => {
-      if (opt.status !== 'available') return false;
+  getCandidateList(
+    optometrists: Optometrist[],
+    appointments: Appointment[],
+    date: string,
+    startTime: string,
+    endTime: string
+  ): CandidateResult[] {
+    console.log('[Assignment] 获取候选验光师列表:', { date, startTime, endTime });
 
-      const slotStart = parseInt(startTime.replace(':', ''), 10);
-      const slotEnd = parseInt(endTime.replace(':', ''), 10);
+    const slotStart = parseInt(startTime.replace(':', ''), 10);
+    const slotEnd = parseInt(endTime.replace(':', ''), 10);
+
+    const candidates: Array<Omit<CandidateResult, 'rank'>> = [];
+
+    for (const opt of optometrists) {
+      if (opt.status !== 'available') {
+        continue;
+      }
+
       const workStart = parseInt(opt.workStartTime.replace(':', ''), 10);
       const workEnd = parseInt(opt.workEndTime.replace(':', ''), 10);
+      const workTimeMatch = slotStart >= workStart && slotEnd <= workEnd;
+      const workTimeReason = workTimeMatch
+        ? `工作时段 ${opt.workStartTime}-${opt.workEndTime} 匹配`
+        : `工作时段 ${opt.workStartTime}-${opt.workEndTime} 不匹配`;
 
-      if (slotStart < workStart || slotEnd > workEnd) return false;
+      if (!workTimeMatch) {
+        continue;
+      }
 
       const todayAppointments = appointments.filter(
         (a) => a.optometristId === opt.id && a.date === date && a.status !== 'cancelled'
@@ -37,51 +73,52 @@ export const assignmentService = {
         return !(slotEnd <= aStart || slotStart >= aEnd);
       });
 
-      return !hasConflict;
-    });
-
-    if (availableOptometrists.length === 0) {
-      console.log('[Assignment] 无可用验光师');
-      return null;
-    }
-
-    const scored = availableOptometrists.map((opt) => {
-      const todayAppointments = appointments.filter(
-        (a) => a.optometristId === opt.id && a.date === date && a.status !== 'cancelled'
-      );
-
-      let score = 0;
-      const reasons: string[] = [];
+      if (hasConflict) {
+        continue;
+      }
 
       const loadScore = Math.max(0, 10 - todayAppointments.length * 2);
-      score += loadScore;
-      if (todayAppointments.length <= 2) {
-        reasons.push('当前负载较轻');
-      }
+      const loadReason = todayAppointments.length === 0
+        ? '今日暂无预约，负载最轻'
+        : todayAppointments.length <= 2
+          ? `今日 ${todayAppointments.length} 单，负载较轻`
+          : `今日 ${todayAppointments.length} 单，负载适中`;
 
       const ratingScore = opt.rating * 2;
-      score += ratingScore;
-
       const expScore = Math.min(opt.experience, 15) * 0.5;
-      score += expScore;
 
       const fragmentScore = calculateFragmentationScore(opt, todayAppointments, startTime, endTime);
-      score += fragmentScore;
-      if (fragmentScore > 0) {
-        reasons.push('可填补空闲时段');
-      }
+      const fragmentReason = fragmentScore >= 8
+        ? '可填补两单之间的空闲时段，减少碎片'
+        : fragmentScore >= 3
+          ? '填补上下班前后的空档'
+          : '常规分配';
 
-      return {
+      const score = loadScore + ratingScore + expScore + fragmentScore;
+      const reason = [loadReason, fragmentReason, `评分${opt.rating}`, `经验${opt.experience}年`].join('，');
+
+      candidates.push({
         optometrist: opt,
         score,
-        reason: reasons.join('，') || '综合评分最优'
-      };
-    });
+        reason,
+        details: {
+          loadScore,
+          loadReason,
+          ratingScore,
+          expScore,
+          fragmentScore,
+          fragmentReason,
+          workTimeMatch,
+          workTimeReason
+        }
+      });
+    }
 
-    scored.sort((a, b) => b.score - a.score);
+    candidates.sort((a, b) => b.score - a.score);
+    const result = candidates.map((c, i) => ({ ...c, rank: i + 1 }));
 
-    console.log('[Assignment] 分配结果:', scored[0]?.optometrist.name, '评分:', scored[0]?.score);
-    return scored[0];
+    console.log('[Assignment] 候选列表:', result.map((r) => `${r.rank}. ${r.optometrist.name}(${r.score}分)`));
+    return result;
   },
 
   getOptometristFreeSlots(

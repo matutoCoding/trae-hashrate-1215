@@ -38,7 +38,31 @@ interface AppState {
   createDeliveryWithStock: (params: {
     delivery: Omit<DeliveryRecord, 'id' | 'createdAt' | 'items' | 'totalAmount'>;
     items: Array<{ batchId: string; quantity: number; eye: 'left' | 'right' | 'both' }>;
-  }) => { success: boolean; message?: string };
+  }) => { success: boolean; message?: string; data?: any };
+
+  previewDeliveryWithStock: (params: {
+    items: Array<{ batchId: string; quantity: number; eye: 'left' | 'right' | 'both' }>;
+  }) => {
+    success: boolean;
+    message?: string;
+    preview?: {
+      items: Array<{
+        batchId: string;
+        brand: string;
+        model: string;
+        lensType: string;
+        originalQty: number;
+        actualQty: number;
+        remainingBefore: number;
+        remainingAfter: number;
+        unitPrice: number;
+        subtotal: number;
+        eye: 'left' | 'right' | 'both';
+      }>;
+      totalAmount: number;
+      totalPieces: number;
+    };
+  };
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -180,6 +204,68 @@ export const useAppStore = create<AppState>((set, get) => ({
     storage.setDeliveries(deliveries);
     set({ deliveries });
     console.log('[Store] 更新出库状态:', id, status);
+  },
+
+  previewDeliveryWithStock: ({ items }) => {
+    console.log('[Store] 预览出库...');
+
+    // 计算每个批次实际需要扣减的片数
+    const batchQtyMap: Record<string, number> = {};
+    items.forEach((item) => {
+      const actualQty = item.eye === 'both' ? item.quantity * 2 : item.quantity;
+      batchQtyMap[item.batchId] = (batchQtyMap[item.batchId] || 0) + actualQty;
+    });
+
+    // 预校验库存
+    const { lensBatches: currentBatches } = get();
+    for (const [batchId, needQty] of Object.entries(batchQtyMap)) {
+      const batch = currentBatches.find((b) => b.id === batchId);
+      if (!batch) {
+        return { success: false, message: `批次不存在: ${batchId}` };
+      }
+      if (batch.remainingQuantity < needQty) {
+        return {
+          success: false,
+          message: `库存不足：${batch.brand} ${batch.model} 需要${needQty}片，仅剩${batch.remainingQuantity}片`
+        };
+      }
+    }
+
+    // 生成预览明细
+    const previewItems = items.map((item) => {
+      const batch = currentBatches.find((b) => b.id === item.batchId)!;
+      const actualQty = item.eye === 'both' ? item.quantity * 2 : item.quantity;
+      const remainingAfter = batch.remainingQuantity - actualQty;
+      const subtotal = actualQty * batch.unitPrice;
+
+      return {
+        batchId: item.batchId,
+        brand: batch.brand,
+        model: batch.model,
+        lensType: batch.lensType,
+        originalQty: item.quantity,
+        actualQty,
+        remainingBefore: batch.remainingQuantity,
+        remainingAfter,
+        unitPrice: batch.unitPrice,
+        subtotal,
+        eye: item.eye
+      };
+    });
+
+    const totalAmount = previewItems.reduce((sum, i) => sum + i.subtotal, 0);
+    const totalPieces = previewItems.reduce((sum, i) => sum + i.actualQty, 0);
+
+    console.log('[Store] 出库预览完成，总金额:', totalAmount, '总片数:', totalPieces);
+
+    return {
+      success: true,
+      preview: {
+        items: previewItems,
+        totalAmount,
+        totalPieces
+      }
+    };
   },
 
   createDeliveryWithStock: ({ delivery, items }) => {

@@ -11,6 +11,7 @@ import { optometristStatusLabels } from '@/data/optometrist';
 import { appointmentTypeLabels } from '@/data/appointment';
 import assignmentService from '@/services/assignment';
 import type { Optometrist, OptometristStatus } from '@/types/optometrist';
+import type { CandidateResult } from '@/services/assignment';
 
 const SchedulePage: React.FC = () => {
   const {
@@ -29,12 +30,16 @@ const SchedulePage: React.FC = () => {
   const [timeSlots] = useState(generateTimeSlots(9, 18, 30));
   const [showBookModal, setShowBookModal] = useState(false);
   const [showOptModal, setShowOptModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
   const [editingOpt, setEditingOpt] = useState<Optometrist | null>(null);
+  const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
 
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [appointmentType, setAppointmentType] = useState<string>('comprehensive');
   const [assignedOptometrist, setAssignedOptometrist] = useState<any>(null);
+  const [candidateList, setCandidateList] = useState<CandidateResult[]>([]);
+  const [selectedCandidateIdx, setSelectedCandidateIdx] = useState(0);
 
   const [optForm, setOptForm] = useState({
     name: '',
@@ -77,7 +82,7 @@ const SchedulePage: React.FC = () => {
       return;
     }
 
-    const assignmentResult = assignmentService.findBestOptometrist(
+    const candidates = assignmentService.getCandidateList(
       optometrists,
       appointments,
       selectedDate,
@@ -85,7 +90,7 @@ const SchedulePage: React.FC = () => {
       selectedTimeSlot.endTime
     );
 
-    if (!assignmentResult) {
+    if (candidates.length === 0) {
       Taro.showToast({
         title: '该时段暂无可用验光师',
         icon: 'none'
@@ -93,8 +98,20 @@ const SchedulePage: React.FC = () => {
       return;
     }
 
-    setAssignedOptometrist(assignmentResult);
+    setCandidateList(candidates);
+    setSelectedCandidateIdx(0);
+    setAssignedOptometrist(candidates[0]);
     setShowBookModal(true);
+  };
+
+  const handleSelectCandidate = (idx: number) => {
+    setSelectedCandidateIdx(idx);
+    setAssignedOptometrist(candidateList[idx]);
+  };
+
+  const handleViewAppointmentDetail = (appointment: any) => {
+    setSelectedAppointment(appointment);
+    setShowDetailModal(true);
   };
 
   const handleConfirmBooking = () => {
@@ -128,6 +145,7 @@ const SchedulePage: React.FC = () => {
     setCustomerPhone('');
     setSelectedTimeSlot(null);
     setAssignedOptometrist(null);
+    setCandidateList([]);
   };
 
   const handleOpenAddOptometrist = () => {
@@ -303,6 +321,72 @@ const SchedulePage: React.FC = () => {
         </View>
       )}
 
+      <Text className={styles.sectionTitle}>当日预约看板</Text>
+      <View className={styles.kanban}>
+        {timeSlots.map((slot) => {
+          const slotAvailability = assignmentService.getSlotAvailability(
+            optometrists,
+            appointments,
+            selectedDate,
+            slot.startTime,
+            slot.endTime
+          );
+          const slotAppointments = appointments.filter(
+            (a) =>
+              a.date === selectedDate &&
+              a.startTime === slot.startTime &&
+              a.status !== 'cancelled'
+          );
+          const bookedCount = slotAppointments.length;
+          const isDisabled = slotAvailability.isFullyBooked || slotAvailability.totalOnDuty === 0;
+
+          return (
+            <View key={slot.id} className={styles.kanbanSlot}>
+              <View className={styles.kanbanTime}>
+                <Text className={styles.kanbanTimeText}>{slot.startTime}</Text>
+                <Text
+                  className={classnames(styles.kanbanStatus, {
+                    [styles.kanbanStatusFull]: isDisabled,
+                    [styles.kanbanStatusPartial]: !isDisabled && bookedCount > 0
+                  })}
+                >
+                  {isDisabled
+                    ? '已满'
+                    : slotAvailability.availableCount > 0
+                      ? `剩${slotAvailability.availableCount}人`
+                      : '可约'}
+                </Text>
+              </View>
+              <View className={styles.kanbanAppointments}>
+                {slotAppointments.length === 0 ? (
+                  <View className={styles.kanbanEmpty}>
+                    <Text className={styles.kanbanEmptyText}>暂无预约</Text>
+                  </View>
+                ) : (
+                  slotAppointments.map((apt) => (
+                    <View
+                      key={apt.id}
+                      className={styles.kanbanApptCard}
+                      onClick={() => handleViewAppointmentDetail(apt)}
+                    >
+                      <View className={styles.kanbanApptAvatar}>
+                        {apt.optometristName?.charAt(0) || '验'}
+                      </View>
+                      <View className={styles.kanbanApptInfo}>
+                        <Text className={styles.kanbanApptName}>{apt.customerName}</Text>
+                        <Text className={styles.kanbanApptOpt}>
+                          {apt.optometristName} · {appointmentTypeLabels[apt.type]?.label || '验光'}
+                        </Text>
+                      </View>
+                    </View>
+                  ))
+                )}
+              </View>
+            </View>
+          );
+        })}
+      </View>
+
       <View className={styles.sectionHeader}>
         <Text className={styles.sectionTitle}>验光师团队</Text>
         <Button className={styles.addOptBtn} onClick={handleOpenAddOptometrist}>
@@ -312,9 +396,15 @@ const SchedulePage: React.FC = () => {
       <View>
         {optometrists.map((opt) => (
           <View key={opt.id} className={styles.optCardWrapper}>
-            <OptometristCard data={opt} showWorkload workloadMax={18} />
+            <OptometristCard data={opt} showWorkload workloadMax={18} onClick={() => {}} />
             <View className={styles.optActions}>
-              <Text className={styles.optEditBtn} onClick={() => handleOpenEditOptometrist(opt)}>
+              <Text
+                className={styles.optEditBtn}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleOpenEditOptometrist(opt);
+                }}
+              >
                 ✏️ 编辑
               </Text>
             </View>
@@ -337,14 +427,82 @@ const SchedulePage: React.FC = () => {
             {assignedOptometrist && (
               <View className={styles.assignedCard}>
                 <View className={styles.assignedHeader}>
-                  <Text className={styles.assignedLabel}>系统推荐验光师</Text>
-                  <View className={styles.assignedScore}>评分 {assignedOptometrist.score.toFixed(1)}</View>
+                  <Text className={styles.assignedLabel}>已选验光师（可切换）</Text>
+                  <View className={styles.assignedScore}>
+                    排名 {selectedCandidateIdx + 1}/{candidateList.length} · 总分 {assignedOptometrist.score.toFixed(1)}
+                  </View>
                 </View>
                 <View className={styles.assignedInfo}>
                   <Text className={styles.assignedName}>{assignedOptometrist.optometrist.name}</Text>
                   <Text className={styles.assignedTitle}>{assignedOptometrist.optometrist.title}</Text>
                 </View>
-                <Text className={styles.assignedReason}>推荐理由：{assignedOptometrist.reason}</Text>
+
+                <View className={styles.scoreDetail}>
+                  <View className={styles.scoreItem}>
+                    <Text className={styles.scoreItemLabel}>负载分</Text>
+                    <Text className={styles.scoreItemValue}>
+                      +{assignedOptometrist.details.loadScore.toFixed(1)}
+                    </Text>
+                    <Text className={styles.scoreItemReason}>
+                      {assignedOptometrist.details.loadReason}
+                    </Text>
+                  </View>
+                  <View className={styles.scoreItem}>
+                    <Text className={styles.scoreItemLabel}>填补空档</Text>
+                    <Text className={styles.scoreItemValue}>
+                      +{assignedOptometrist.details.fragmentScore.toFixed(1)}
+                    </Text>
+                    <Text className={styles.scoreItemReason}>
+                      {assignedOptometrist.details.fragmentReason}
+                    </Text>
+                  </View>
+                  <View className={styles.scoreItem}>
+                    <Text className={styles.scoreItemLabel}>工作时间</Text>
+                    <Text
+                      className={classnames(styles.scoreItemValue, {
+                        [styles.scoreValueBad]: !assignedOptometrist.details.workTimeMatch
+                      })}
+                    >
+                      {assignedOptometrist.details.workTimeMatch ? '✓ 匹配' : '✗ 不匹配'}
+                    </Text>
+                    <Text className={styles.scoreItemReason}>
+                      {assignedOptometrist.details.workTimeReason}
+                    </Text>
+                  </View>
+                  <View className={styles.scoreItem}>
+                    <Text className={styles.scoreItemLabel}>好评/经验</Text>
+                    <Text className={styles.scoreItemValue}>
+                      +{(assignedOptometrist.details.ratingScore + assignedOptometrist.details.expScore).toFixed(1)}
+                    </Text>
+                    <Text className={styles.scoreItemReason}>
+                      评分 {assignedOptometrist.optometrist.rating} · 经验 {assignedOptometrist.optometrist.experience}年
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            )}
+
+            {candidateList.length > 0 && (
+              <View className={styles.candidateSection}>
+                <Text className={styles.candidateTitle}>候选验光师排名</Text>
+                {candidateList.map((c, idx) => (
+                  <View
+                    key={c.optometrist.id}
+                    className={classnames(styles.candidateItem, {
+                      [styles.candidateActive]: idx === selectedCandidateIdx
+                    })}
+                    onClick={() => handleSelectCandidate(idx)}
+                  >
+                    <View className={styles.candidateRank}>{idx + 1}</View>
+                    <View className={styles.candidateInfo}>
+                      <Text className={styles.candidateName}>
+                        {c.optometrist.name}
+                      </Text>
+                      <Text className={styles.candidateReason}>{c.reason}</Text>
+                    </View>
+                    <View className={styles.candidateScore}>{c.score.toFixed(1)}分</View>
+                  </View>
+                ))}
               </View>
             )}
 
@@ -392,6 +550,63 @@ const SchedulePage: React.FC = () => {
               </Button>
               <Button className={styles.confirmBtn} onClick={handleConfirmBooking}>
                 确认预约
+              </Button>
+            </View>
+          </View>
+        </View>
+      )}
+
+      {showDetailModal && selectedAppointment && (
+        <View className={styles.modalOverlay} onClick={() => setShowDetailModal(false)}>
+          <View className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <Text className={styles.modalTitle}>预约详情</Text>
+
+            <View className={styles.formItem}>
+              <Text className={styles.formLabel}>预约时间</Text>
+              <Text className={styles.formValue}>
+                {selectedAppointment.date} {selectedAppointment.startTime} - {selectedAppointment.endTime}
+              </Text>
+            </View>
+
+            <View className={styles.formItem}>
+              <Text className={styles.formLabel}>顾客姓名</Text>
+              <Text className={styles.formValue}>{selectedAppointment.customerName}</Text>
+            </View>
+
+            <View className={styles.formItem}>
+              <Text className={styles.formLabel}>联系电话</Text>
+              <Text className={styles.formValue}>{selectedAppointment.customerPhone}</Text>
+            </View>
+
+            <View className={styles.formItem}>
+              <Text className={styles.formLabel}>验光类型</Text>
+              <Text className={styles.formValue}>
+                {appointmentTypeLabels[selectedAppointment.type]?.label || '常规验光'}
+              </Text>
+            </View>
+
+            <View className={styles.assignedCard}>
+              <View className={styles.assignedHeader}>
+                <Text className={styles.assignedLabel}>验光师</Text>
+                <View
+                  className={classnames(styles.statusBadge, {
+                    [styles.statusConfirmed]: selectedAppointment.status === 'confirmed',
+                    [styles.statusPending]: selectedAppointment.status === 'pending',
+                    [styles.statusCompleted]: selectedAppointment.status === 'completed',
+                    [styles.statusCancelled]: selectedAppointment.status === 'cancelled'
+                  })}
+                >
+                  {appointmentTypeLabels[selectedAppointment.status]?.label || '未知'}
+                </View>
+              </View>
+              <View className={styles.assignedInfo}>
+                <Text className={styles.assignedName}>{selectedAppointment.optometristName}</Text>
+              </View>
+            </View>
+
+            <View className={styles.modalActions}>
+              <Button className={styles.cancelBtn} onClick={() => setShowDetailModal(false)}>
+                关闭
               </Button>
             </View>
           </View>

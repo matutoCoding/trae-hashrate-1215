@@ -11,9 +11,11 @@ import type { DeliveryStatus, LensBatch } from '@/types/lens';
 import { getTodayDate } from '@/utils';
 
 const DeliveryPage: React.FC = () => {
-  const { deliveries, lensBatches, optometrists, createDeliveryWithStock } = useAppStore();
+  const { deliveries, lensBatches, optometrists, createDeliveryWithStock, previewDeliveryWithStock } = useAppStore();
   const [activeTab, setActiveTab] = useState<DeliveryStatus | 'all'>('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [previewData, setPreviewData] = useState<any>(null);
 
   const [formData, setFormData] = useState({
     customerName: '',
@@ -133,9 +135,26 @@ const DeliveryPage: React.FC = () => {
       return;
     }
 
+    const previewResult = previewDeliveryWithStock({
+      items: formData.selectedItems
+    });
+
+    if (!previewResult.success) {
+      Taro.showModal({
+        title: '出库校验失败',
+        content: previewResult.message || '请检查库存后重试',
+        showCancel: false
+      });
+      return;
+    }
+
+    setPreviewData(previewResult.preview);
+    setShowPreviewModal(true);
+  };
+
+  const handleConfirmWithPreview = () => {
     const optometrist = optometrists.find((o) => o.id === formData.optometristId);
 
-    // 使用事务性出库：库存预校验 + 扣减 + 出库单创建，一步完成
     const result = createDeliveryWithStock({
       delivery: {
         deliveryNo: `DL${Date.now().toString().slice(-8)}`,
@@ -175,6 +194,8 @@ const DeliveryPage: React.FC = () => {
 
     Taro.showToast({ title: '创建成功', icon: 'success' });
     setShowCreateModal(false);
+    setShowPreviewModal(false);
+    setPreviewData(null);
     setFormData({
       customerName: '',
       customerPhone: '',
@@ -190,6 +211,11 @@ const DeliveryPage: React.FC = () => {
       pdRight: '',
       selectedItems: []
     });
+  };
+
+  const handleClosePreview = () => {
+    setShowPreviewModal(false);
+    setPreviewData(null);
   };
 
   return (
@@ -486,6 +512,103 @@ const DeliveryPage: React.FC = () => {
                 取消
               </Button>
               <Button className={styles.confirmBtn} onClick={handleConfirmCreate}>
+                预览汇总
+              </Button>
+            </View>
+          </ScrollView>
+        </View>
+      )}
+
+      {showPreviewModal && previewData && (
+        <View className={styles.modalOverlay} onClick={handleClosePreview}>
+          <ScrollView className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <Text className={styles.modalTitle}>出库汇总预览</Text>
+
+            <View className={styles.previewSummary}>
+              <View className={styles.previewSummaryItem}>
+                <Text className={styles.previewSummaryLabel}>出库镜片</Text>
+                <Text className={styles.previewSummaryValue}>{previewData.items.length} 个批次</Text>
+              </View>
+              <View className={styles.previewSummaryItem}>
+                <Text className={styles.previewSummaryLabel}>总片数</Text>
+                <Text className={styles.previewSummaryValue}>{previewData.totalPieces} 片</Text>
+              </View>
+              <View className={styles.previewSummaryItem}>
+                <Text className={styles.previewSummaryLabel}>总金额</Text>
+                <Text className={styles.previewSummaryPrice}>¥ {previewData.totalAmount.toFixed(2)}</Text>
+              </View>
+            </View>
+
+            <Text className={styles.previewSectionTitle}>扣减明细</Text>
+
+            {previewData.items.map((item: any, idx: number) => (
+              <View key={idx} className={styles.previewItemCard}>
+                <View className={styles.previewItemHeader}>
+                  <Text className={styles.previewItemName}>
+                    {item.brand} {item.model}
+                  </Text>
+                  <Text className={styles.previewItemType}>
+                    {lensTypeLabels[item.lensType] || item.lensType}
+                  </Text>
+                </View>
+
+                <View className={styles.previewItemRow}>
+                  <View className={styles.previewItemCell}>
+                    <Text className={styles.previewItemCellLabel}>适用眼</Text>
+                    <Text className={styles.previewItemCellValue}>
+                      {item.eye === 'both' ? '双眼' : item.eye === 'left' ? '左眼' : '右眼'}
+                    </Text>
+                  </View>
+                  <View className={styles.previewItemCell}>
+                    <Text className={styles.previewItemCellLabel}>数量</Text>
+                    <Text className={styles.previewItemCellValue}>
+                      {item.originalQty} 副 × {item.eye === 'both' ? 2 : 1} = {item.actualQty} 片
+                    </Text>
+                  </View>
+                  <View className={styles.previewItemCell}>
+                    <Text className={styles.previewItemCellLabel}>单价</Text>
+                    <Text className={styles.previewItemCellValue}>¥ {item.unitPrice}</Text>
+                  </View>
+                </View>
+
+                <View className={styles.previewItemRow}>
+                  <View className={styles.previewItemCell}>
+                    <Text className={styles.previewItemCellLabel}>原库存</Text>
+                    <Text className={styles.previewItemCellValue}>{item.remainingBefore} 片</Text>
+                  </View>
+                  <View className={styles.previewItemCell}>
+                    <Text className={styles.previewItemCellLabel}>本次扣减</Text>
+                    <Text className={styles.previewItemCellValueBad}>-{item.actualQty} 片</Text>
+                  </View>
+                  <View className={styles.previewItemCell}>
+                    <Text className={styles.previewItemCellLabel}>扣减后</Text>
+                    <Text className={classnames(styles.previewItemCellValue, {
+                      [styles.previewStockLow]: item.remainingAfter <= 5 && item.remainingAfter > 0,
+                      [styles.previewStockOut]: item.remainingAfter === 0
+                    })}>
+                      {item.remainingAfter} 片
+                      {item.remainingAfter === 0 ? ' (缺货)' : item.remainingAfter <= 5 ? ' (库存低)' : ''}
+                    </Text>
+                  </View>
+                </View>
+
+                <View className={styles.previewItemFooter}>
+                  <Text className={styles.previewItemSubtotalLabel}>小计</Text>
+                  <Text className={styles.previewItemSubtotal}>¥ {item.subtotal.toFixed(2)}</Text>
+                </View>
+              </View>
+            ))}
+
+            <View className={styles.previewTotal}>
+              <Text className={styles.previewTotalLabel}>应付金额</Text>
+              <Text className={styles.previewTotalPrice}>¥ {previewData.totalAmount.toFixed(2)}</Text>
+            </View>
+
+            <View className={styles.modalActions}>
+              <Button className={styles.cancelBtn} onClick={handleClosePreview}>
+                返回修改
+              </Button>
+              <Button className={styles.confirmBtn} onClick={handleConfirmWithPreview}>
                 确认出库
               </Button>
             </View>
