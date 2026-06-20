@@ -8,7 +8,7 @@ import OptometristCard from '@/components/OptometristCard';
 import StatCard from '@/components/StatCard';
 import { getWeekDates, generateTimeSlots } from '@/utils';
 import { optometristStatusLabels } from '@/data/optometrist';
-import { appointmentTypeLabels } from '@/data/appointment';
+import { appointmentTypeLabels, appointmentStatusLabels } from '@/data/appointment';
 import assignmentService from '@/services/assignment';
 import type { Optometrist, OptometristStatus } from '@/types/optometrist';
 import type { CandidateResult } from '@/services/assignment';
@@ -375,7 +375,7 @@ const SchedulePage: React.FC = () => {
                       <View className={styles.kanbanApptInfo}>
                         <Text className={styles.kanbanApptName}>{apt.customerName}</Text>
                         <Text className={styles.kanbanApptOpt}>
-                          {apt.optometristName} · {appointmentTypeLabels[apt.type]?.label || '验光'}
+                          {apt.optometristName} · {appointmentTypeLabels[apt.type] || '常规验光'}
                         </Text>
                       </View>
                     </View>
@@ -581,7 +581,7 @@ const SchedulePage: React.FC = () => {
             <View className={styles.formItem}>
               <Text className={styles.formLabel}>验光类型</Text>
               <Text className={styles.formValue}>
-                {appointmentTypeLabels[selectedAppointment.type]?.label || '常规验光'}
+                {appointmentTypeLabels[selectedAppointment.type] || '常规验光'}
               </Text>
             </View>
 
@@ -596,7 +596,7 @@ const SchedulePage: React.FC = () => {
                     [styles.statusCancelled]: selectedAppointment.status === 'cancelled'
                   })}
                 >
-                  {appointmentTypeLabels[selectedAppointment.status]?.label || '未知'}
+                  {appointmentStatusLabels[selectedAppointment.status]?.label || '未知'}
                 </View>
               </View>
               <View className={styles.assignedInfo}>

@@ -7,7 +7,8 @@ import { useAppStore } from '@/store';
 import DeliveryCard from '@/components/DeliveryCard';
 import StatCard from '@/components/StatCard';
 import { lensTypeLabels } from '@/data/lens';
-import type { DeliveryStatus, LensBatch } from '@/types/lens';
+import type { DeliveryStatus } from '@/types/delivery';
+import type { LensBatch } from '@/types/lens';
 import { getTodayDate } from '@/utils';
 
 const DeliveryPage: React.FC = () => {
@@ -531,11 +532,11 @@ const DeliveryPage: React.FC = () => {
               </View>
               <View className={styles.previewSummaryItem}>
                 <Text className={styles.previewSummaryLabel}>总片数</Text>
-                <Text className={styles.previewSummaryValue}>{previewData.totalPieces} 片</Text>
+                <Text className={styles.previewSummaryValue}>{Number(previewData.totalPieces)} 片</Text>
               </View>
               <View className={styles.previewSummaryItem}>
                 <Text className={styles.previewSummaryLabel}>总金额</Text>
-                <Text className={styles.previewSummaryPrice}>¥ {previewData.totalAmount.toFixed(2)}</Text>
+                <Text className={styles.previewSummaryPrice}>¥ {Number(previewData.totalAmount).toFixed(2)}</Text>
               </View>
             </View>
 
@@ -546,6 +547,9 @@ const DeliveryPage: React.FC = () => {
                 <View className={styles.previewItemHeader}>
                   <Text className={styles.previewItemName}>
                     {item.brand} {item.model}
+                    {item.rowCount > 1 && (
+                      <Text className={styles.previewItemMulti}>（{item.rowCount}行合并）</Text>
+                    )}
                   </Text>
                   <Text className={styles.previewItemType}>
                     {lensTypeLabels[item.lensType] || item.lensType}
@@ -554,54 +558,54 @@ const DeliveryPage: React.FC = () => {
 
                 <View className={styles.previewItemRow}>
                   <View className={styles.previewItemCell}>
-                    <Text className={styles.previewItemCellLabel}>适用眼</Text>
+                    <Text className={styles.previewItemCellLabel}>规格</Text>
                     <Text className={styles.previewItemCellValue}>
-                      {item.eye === 'both' ? '双眼' : item.eye === 'left' ? '左眼' : '右眼'}
+                      {item.eyeDesc}
                     </Text>
                   </View>
                   <View className={styles.previewItemCell}>
-                    <Text className={styles.previewItemCellLabel}>数量</Text>
+                    <Text className={styles.previewItemCellLabel}>总片数</Text>
                     <Text className={styles.previewItemCellValue}>
-                      {item.originalQty} 副 × {item.eye === 'both' ? 2 : 1} = {item.actualQty} 片
+                      {item.totalActualQty} 片
                     </Text>
                   </View>
                   <View className={styles.previewItemCell}>
-                    <Text className={styles.previewItemCellLabel}>单价</Text>
-                    <Text className={styles.previewItemCellValue}>¥ {item.unitPrice}</Text>
+                    <Text className={styles.previewItemCellLabel}>销售单价</Text>
+                    <Text className={styles.previewItemCellValue}>¥ {Number(item.unitPrice).toFixed(2)}</Text>
                   </View>
                 </View>
 
                 <View className={styles.previewItemRow}>
                   <View className={styles.previewItemCell}>
                     <Text className={styles.previewItemCellLabel}>原库存</Text>
-                    <Text className={styles.previewItemCellValue}>{item.remainingBefore} 片</Text>
+                    <Text className={styles.previewItemCellValue}>{Number(item.remainingBefore)} 片</Text>
                   </View>
                   <View className={styles.previewItemCell}>
                     <Text className={styles.previewItemCellLabel}>本次扣减</Text>
-                    <Text className={styles.previewItemCellValueBad}>-{item.actualQty} 片</Text>
+                    <Text className={styles.previewItemCellValueBad}>-{Number(item.totalActualQty)} 片</Text>
                   </View>
                   <View className={styles.previewItemCell}>
                     <Text className={styles.previewItemCellLabel}>扣减后</Text>
                     <Text className={classnames(styles.previewItemCellValue, {
-                      [styles.previewStockLow]: item.remainingAfter <= 5 && item.remainingAfter > 0,
-                      [styles.previewStockOut]: item.remainingAfter === 0
+                      [styles.previewStockLow]: Number(item.remainingAfter) <= 5 && Number(item.remainingAfter) > 0,
+                      [styles.previewStockOut]: Number(item.remainingAfter) === 0
                     })}>
-                      {item.remainingAfter} 片
-                      {item.remainingAfter === 0 ? ' (缺货)' : item.remainingAfter <= 5 ? ' (库存低)' : ''}
+                      {Number(item.remainingAfter)} 片
+                      {Number(item.remainingAfter) === 0 ? ' (缺货)' : Number(item.remainingAfter) <= 5 ? ' (库存低)' : ''}
                     </Text>
                   </View>
                 </View>
 
                 <View className={styles.previewItemFooter}>
                   <Text className={styles.previewItemSubtotalLabel}>小计</Text>
-                  <Text className={styles.previewItemSubtotal}>¥ {item.subtotal.toFixed(2)}</Text>
+                  <Text className={styles.previewItemSubtotal}>¥ {Number(item.subtotal).toFixed(2)}</Text>
                 </View>
               </View>
             ))}
 
             <View className={styles.previewTotal}>
               <Text className={styles.previewTotalLabel}>应付金额</Text>
-              <Text className={styles.previewTotalPrice}>¥ {previewData.totalAmount.toFixed(2)}</Text>
+              <Text className={styles.previewTotalPrice}>¥ {Number(previewData.totalAmount).toFixed(2)}</Text>
             </View>
 
             <View className={styles.modalActions}>

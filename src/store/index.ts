@@ -209,52 +209,74 @@ export const useAppStore = create<AppState>((set, get) => ({
   previewDeliveryWithStock: ({ items }) => {
     console.log('[Store] 预览出库...');
 
-    // 计算每个批次实际需要扣减的片数
-    const batchQtyMap: Record<string, number> = {};
+    // 按批次聚合：计算每个批次实际需要扣减的片数（双眼x2，单眼x1）
+    const batchAggregate: Record<
+      string,
+      {
+        totalActualQty: number;
+        rows: Array<{ originalQty: number; eye: 'left' | 'right' | 'both' }>;
+      }
+    > = {};
+
     items.forEach((item) => {
       const actualQty = item.eye === 'both' ? item.quantity * 2 : item.quantity;
-      batchQtyMap[item.batchId] = (batchQtyMap[item.batchId] || 0) + actualQty;
+      if (!batchAggregate[item.batchId]) {
+        batchAggregate[item.batchId] = { totalActualQty: 0, rows: [] };
+      }
+      batchAggregate[item.batchId].totalActualQty += actualQty;
+      batchAggregate[item.batchId].rows.push({ originalQty: item.quantity, eye: item.eye });
     });
 
     // 预校验库存
     const { lensBatches: currentBatches } = get();
-    for (const [batchId, needQty] of Object.entries(batchQtyMap)) {
+    for (const [batchId, agg] of Object.entries(batchAggregate)) {
       const batch = currentBatches.find((b) => b.id === batchId);
       if (!batch) {
         return { success: false, message: `批次不存在: ${batchId}` };
       }
-      if (batch.remainingQuantity < needQty) {
+      if (batch.remainingQuantity < agg.totalActualQty) {
         return {
           success: false,
-          message: `库存不足：${batch.brand} ${batch.model} 需要${needQty}片，仅剩${batch.remainingQuantity}片`
+          message: `库存不足：${batch.brand} ${batch.model} 需要${agg.totalActualQty}片，仅剩${batch.remainingQuantity}片`
         };
       }
     }
 
-    // 生成预览明细
-    const previewItems = items.map((item) => {
-      const batch = currentBatches.find((b) => b.id === item.batchId)!;
-      const actualQty = item.eye === 'both' ? item.quantity * 2 : item.quantity;
-      const remainingAfter = batch.remainingQuantity - actualQty;
-      const subtotal = actualQty * batch.unitPrice;
+    // 生成按批次合并的预览明细
+    const previewItems = Object.entries(batchAggregate).map(([batchId, agg]) => {
+      const batch = currentBatches.find((b) => b.id === batchId)!;
+      const remainingAfter = batch.remainingQuantity - agg.totalActualQty;
+      // 关键修复：字段名是 retailPrice，不是 unitPrice
+      const unitPrice = Number(batch.retailPrice) || 0;
+      const subtotal = agg.totalActualQty * unitPrice;
+
+      // 构造眼别描述
+      const eyeDesc = agg.rows
+        .map((r) => {
+          const eyeLabel = r.eye === 'both' ? '双眼' : r.eye === 'left' ? '左眼' : '右眼';
+          return `${r.originalQty}副(${eyeLabel})`;
+        })
+        .join(' + ');
 
       return {
-        batchId: item.batchId,
+        batchId,
         brand: batch.brand,
         model: batch.model,
         lensType: batch.lensType,
-        originalQty: item.quantity,
-        actualQty,
+        rowCount: agg.rows.length,
+        totalActualQty: agg.totalActualQty,
+        originalQty: agg.rows.reduce((s, r) => s + r.originalQty, 0),
+        eyeDesc,
+        rows: agg.rows,
         remainingBefore: batch.remainingQuantity,
         remainingAfter,
-        unitPrice: batch.unitPrice,
-        subtotal,
-        eye: item.eye
+        unitPrice,
+        subtotal
       };
     });
 
     const totalAmount = previewItems.reduce((sum, i) => sum + i.subtotal, 0);
-    const totalPieces = previewItems.reduce((sum, i) => sum + i.actualQty, 0);
+    const totalPieces = previewItems.reduce((sum, i) => sum + i.totalActualQty, 0);
 
     console.log('[Store] 出库预览完成，总金额:', totalAmount, '总片数:', totalPieces);
 

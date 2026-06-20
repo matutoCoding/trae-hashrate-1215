@@ -451,6 +451,13 @@
   color: $color-text-primary;
 }
 
+.previewItemMulti {
+  font-size: $font-size-xs;
+  color: $color-warning;
+  font-weight: $font-weight-medium;
+  margin-left: $spacing-xs;
+}
+
 .previewItemType {
   font-size: $font-size-xs;
   color: $color-primary;
