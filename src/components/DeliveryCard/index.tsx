@@ -49,8 +49,8 @@ const DeliveryCard: React.FC<DeliveryCardProps> = ({ data, onClick }) => {
             <Text className={styles.itemModel}>{item.model}</Text>
           </View>
           <View className={styles.itemRight}>
-            <Text className={styles.itemQty}>x{item.quantity}</Text>
-            <Text className={styles.itemPrice}>¥{item.unitPrice}</Text>
+            <Text className={styles.itemQty}>x{item.quantity}片</Text>
+            <Text className={styles.itemPrice}>¥{item.unitPrice}/片</Text>
           </View>
         </View>
         ))}

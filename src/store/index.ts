@@ -52,12 +52,14 @@ interface AppState {
         model: string;
         lensType: string;
         originalQty: number;
-        actualQty: number;
+        totalActualQty: number;
         remainingBefore: number;
         remainingAfter: number;
         unitPrice: number;
         subtotal: number;
-        eye: 'left' | 'right' | 'both';
+        eyeDesc: string;
+        rowCount: number;
+        rows: Array<{ originalQty: number; eye: 'left' | 'right' | 'both' }>;
       }>;
       totalAmount: number;
       totalPieces: number;

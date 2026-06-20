@@ -117,7 +117,21 @@ const DeliveryPage: React.FC = () => {
   const handleUpdateItem = (index: number, field: string, value: any) => {
     setFormData((prev) => {
       const items = [...prev.selectedItems];
-      items[index] = { ...items[index], [field]: value };
+      let finalValue = value;
+
+      // 数量输入校验：必须是正整数（>= 1）
+      if (field === 'quantity') {
+        const parsed = parseInt(String(value), 10);
+        // 空值、NaN、0、负数 → 自动恢复为 1
+        if (!value || isNaN(parsed) || parsed <= 0) {
+          finalValue = 1;
+          Taro.showToast({ title: '数量至少为1', icon: 'none' });
+        } else {
+          finalValue = parsed;
+        }
+      }
+
+      items[index] = { ...items[index], [field]: finalValue };
       return { ...prev, selectedItems: items };
     });
   };

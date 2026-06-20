@@ -593,7 +593,8 @@ const SchedulePage: React.FC = () => {
                     [styles.statusConfirmed]: selectedAppointment.status === 'confirmed',
                     [styles.statusPending]: selectedAppointment.status === 'pending',
                     [styles.statusCompleted]: selectedAppointment.status === 'completed',
-                    [styles.statusCancelled]: selectedAppointment.status === 'cancelled'
+                    [styles.statusCancelled]: selectedAppointment.status === 'cancelled',
+                    [styles.statusInProgress]: selectedAppointment.status === 'in-progress'
                   })}
                 >
                   {appointmentStatusLabels[selectedAppointment.status]?.label || '未知'}
