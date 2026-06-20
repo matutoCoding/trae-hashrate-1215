@@ -8,10 +8,10 @@ import DeliveryCard from '@/components/DeliveryCard';
 import StatCard from '@/components/StatCard';
 import { lensTypeLabels } from '@/data/lens';
 import type { DeliveryStatus, LensBatch } from '@/types/lens';
-import { generateId, getTodayDate } from '@/utils';
+import { getTodayDate } from '@/utils';
 
 const DeliveryPage: React.FC = () => {
-  const { deliveries, lensBatches, optometrists, addDelivery, splitLensBatch } = useAppStore();
+  const { deliveries, lensBatches, optometrists, createDeliveryWithStock } = useAppStore();
   const [activeTab, setActiveTab] = useState<DeliveryStatus | 'all'>('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
 
@@ -133,64 +133,45 @@ const DeliveryPage: React.FC = () => {
       return;
     }
 
-    // 先拆分库存
-    let allSuccess = true;
-    formData.selectedItems.forEach((item) => {
-      const qty = item.eye === 'both' ? item.quantity : item.quantity;
-      const success = splitLensBatch(item.batchId, qty, '管理员', `配镜出库: ${formData.customerName}`);
-      if (!success) allSuccess = false;
-    });
-
-    if (!allSuccess) {
-      Taro.showToast({ title: '库存拆分失败', icon: 'none' });
-      return;
-    }
-
-    // 组装items
-    const items = formData.selectedItems.map((item) => {
-      const batch = lensBatches.find((b) => b.id === item.batchId)!;
-      return {
-        id: generateId('item_'),
-        batchId: item.batchId,
-        batchNo: batch.batchNo,
-        brand: batch.brand,
-        model: batch.model,
-        lensType: batch.lensType,
-        quantity: item.eye === 'both' ? item.quantity * 2 : item.quantity,
-        unitPrice: batch.retailPrice,
-        eye: item.eye
-      };
-    });
-
-    const totalAmount = items.reduce((sum, i) => sum + i.quantity * i.unitPrice, 0);
     const optometrist = optometrists.find((o) => o.id === formData.optometristId);
 
-    addDelivery({
-      deliveryNo: `DL${Date.now().toString().slice(-8)}`,
-      customerName: formData.customerName,
-      customerPhone: formData.customerPhone,
-      deliveryDate: getTodayDate(),
-      items,
-      totalAmount,
-      status: 'pending',
-      optometristName: optometrist?.name,
-      prescription: {
-        leftEye: {
-          sphere: formData.leftSphere || 'PL',
-          cylinder: formData.leftCylinder || undefined,
-          axis: formData.leftAxis || undefined
+    // 使用事务性出库：库存预校验 + 扣减 + 出库单创建，一步完成
+    const result = createDeliveryWithStock({
+      delivery: {
+        deliveryNo: `DL${Date.now().toString().slice(-8)}`,
+        customerName: formData.customerName,
+        customerPhone: formData.customerPhone,
+        deliveryDate: getTodayDate(),
+        status: 'pending',
+        optometristName: optometrist?.name,
+        prescription: {
+          leftEye: {
+            sphere: formData.leftSphere || 'PL',
+            cylinder: formData.leftCylinder || undefined,
+            axis: formData.leftAxis || undefined
+          },
+          rightEye: {
+            sphere: formData.rightSphere || 'PL',
+            cylinder: formData.rightCylinder || undefined,
+            axis: formData.rightAxis || undefined
+          },
+          pd: parseFloat(formData.pd),
+          pdLeft: formData.pdLeft ? parseFloat(formData.pdLeft) : undefined,
+          pdRight: formData.pdRight ? parseFloat(formData.pdRight) : undefined
         },
-        rightEye: {
-          sphere: formData.rightSphere || 'PL',
-          cylinder: formData.rightCylinder || undefined,
-          axis: formData.rightAxis || undefined
-        },
-        pd: parseFloat(formData.pd),
-        pdLeft: formData.pdLeft ? parseFloat(formData.pdLeft) : undefined,
-        pdRight: formData.pdRight ? parseFloat(formData.pdRight) : undefined
+        paymentMethod: '待支付'
       },
-      paymentMethod: '待支付'
+      items: formData.selectedItems
     });
+
+    if (!result.success) {
+      Taro.showModal({
+        title: '出库失败',
+        content: result.message || '请检查库存后重试',
+        showCancel: false
+      });
+      return;
+    }
 
     Taro.showToast({ title: '创建成功', icon: 'success' });
     setShowCreateModal(false);

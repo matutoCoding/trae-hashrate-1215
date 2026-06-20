@@ -26,11 +26,19 @@ interface AppState {
   addAppointment: (appointment: Omit<Appointment, 'id' | 'createdAt'>) => void;
   updateAppointmentStatus: (id: string, status: Appointment['status']) => void;
 
+  addOptometrist: (optometrist: Omit<Optometrist, 'id'>) => void;
+  updateOptometrist: (id: string, data: Partial<Optometrist>) => void;
+
   splitLensBatch: (batchId: string, quantity: number, operator: string, remark?: string) => boolean;
   addLensBatch: (batch: Omit<LensBatch, 'id'>) => void;
 
   addDelivery: (delivery: Omit<DeliveryRecord, 'id' | 'createdAt'>) => void;
   updateDeliveryStatus: (id: string, status: DeliveryRecord['status']) => void;
+
+  createDeliveryWithStock: (params: {
+    delivery: Omit<DeliveryRecord, 'id' | 'createdAt' | 'items' | 'totalAmount'>;
+    items: Array<{ batchId: string; quantity: number; eye: 'left' | 'right' | 'both' }>;
+  }) => { success: boolean; message?: string };
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -87,6 +95,26 @@ export const useAppStore = create<AppState>((set, get) => ({
     storage.setAppointments(appointments);
     set({ appointments });
     console.log('[Store] 更新预约状态:', id, status);
+  },
+
+  addOptometrist: (optometrist) => {
+    const newOpt: Optometrist = {
+      ...optometrist,
+      id: generateId('opt_')
+    };
+    const optometrists = [...get().optometrists, newOpt];
+    storage.setOptometrists(optometrists);
+    set({ optometrists });
+    console.log('[Store] 新增验光师:', newOpt.name);
+  },
+
+  updateOptometrist: (id, data) => {
+    const optometrists = get().optometrists.map((o) =>
+      o.id === id ? { ...o, ...data } : o
+    );
+    storage.setOptometrists(optometrists);
+    set({ optometrists });
+    console.log('[Store] 更新验光师:', id);
   },
 
   splitLensBatch: (batchId, quantity, operator, remark) => {
@@ -152,6 +180,113 @@ export const useAppStore = create<AppState>((set, get) => ({
     storage.setDeliveries(deliveries);
     set({ deliveries });
     console.log('[Store] 更新出库状态:', id, status);
+  },
+
+  createDeliveryWithStock: ({ delivery, items }) => {
+    console.log('[Store] 开始事务性出库...');
+
+    // Step 1: 计算每个批次实际需要扣减的片数（双眼x2，单眼x1）
+    const batchQtyMap: Record<string, number> = {};
+    items.forEach((item) => {
+      const actualQty = item.eye === 'both' ? item.quantity * 2 : item.quantity;
+      batchQtyMap[item.batchId] = (batchQtyMap[item.batchId] || 0) + actualQty;
+    });
+
+    // Step 2: 预校验 - 所有批次库存必须充足，一个不够就整体失败
+    const { lensBatches: currentBatches } = get();
+    for (const [batchId, needQty] of Object.entries(batchQtyMap)) {
+      const batch = currentBatches.find((b) => b.id === batchId);
+      if (!batch) {
+        return { success: false, message: `批次不存在: ${batchId}` };
+      }
+      if (batch.remainingQuantity < needQty) {
+        return {
+          success: false,
+          message: `库存不足：${batch.brand} ${batch.model} 需要${needQty}片，仅剩${batch.remainingQuantity}片`
+        };
+      }
+    }
+    console.log('[Store] 库存预校验通过，批次数量:', Object.keys(batchQtyMap).length);
+
+    // Step 3: 开始扣减库存（此时所有校验已通过，不会再失败）
+    let updatedBatches = [...get().lensBatches];
+    const newSplitRecords = [...get().splitRecords];
+
+    for (const [batchId, needQty] of Object.entries(batchQtyMap)) {
+      const batchIdx = updatedBatches.findIndex((b) => b.id === batchId);
+      const batch = updatedBatches[batchIdx];
+      const remainingAfterSplit = batch.remainingQuantity - needQty;
+      const newStatus: LensBatch['status'] =
+        remainingAfterSplit === 0
+          ? 'out-of-stock'
+          : remainingAfterSplit <= 5
+            ? 'low-stock'
+            : 'in-stock';
+
+      updatedBatches[batchIdx] = {
+        ...batch,
+        remainingQuantity: remainingAfterSplit,
+        status: newStatus
+      };
+
+      newSplitRecords.push({
+        id: generateId('split_'),
+        batchId,
+        splitDate: getTodayDate(),
+        splitQuantity: needQty,
+        remainingAfterSplit,
+        operator: '管理员',
+        remark: `配镜出库: ${delivery.customerName}`
+      });
+
+      console.log(
+        `[Store] 扣减 ${batch.brand} ${batch.model}: -${needQty}片, 剩${remainingAfterSplit}片`
+      );
+    }
+
+    // Step 4: 组装出库单 items（使用扣减后的正确数量）
+    const { lensBatches: _batches } = get();
+    const deliveryItems = items.map((item) => {
+      const batch = _batches.find((b) => b.id === item.batchId)!;
+      const actualQty = item.eye === 'both' ? item.quantity * 2 : item.quantity;
+      return {
+        id: generateId('item_'),
+        batchId: item.batchId,
+        batchNo: batch.batchNo,
+        brand: batch.brand,
+        model: batch.model,
+        lensType: batch.lensType,
+        quantity: actualQty,
+        unitPrice: batch.retailPrice,
+        eye: item.eye
+      };
+    });
+
+    const totalAmount = deliveryItems.reduce((sum, i) => sum + i.quantity * i.unitPrice, 0);
+
+    // Step 5: 保存所有变更
+    const newDelivery: DeliveryRecord = {
+      ...delivery,
+      items: deliveryItems,
+      totalAmount,
+      id: generateId('del_'),
+      createdAt: new Date().toISOString()
+    };
+
+    const updatedDeliveries = [...get().deliveries, newDelivery];
+
+    storage.setLensBatches(updatedBatches);
+    storage.setSplitRecords(newSplitRecords);
+    storage.setDeliveries(updatedDeliveries);
+
+    set({
+      lensBatches: updatedBatches,
+      splitRecords: newSplitRecords,
+      deliveries: updatedDeliveries
+    });
+
+    console.log('[Store] 事务性出库成功，出库单号:', newDelivery.deliveryNo);
+    return { success: true };
   }
 }));
 

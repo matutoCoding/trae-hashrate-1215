@@ -131,6 +131,47 @@ export const assignmentService = {
         utilization: maxCapacity > 0 ? Math.round((todayCount / maxCapacity) * 100) : 0
       };
     });
+  },
+
+  getSlotAvailability(
+    optometrists: Optometrist[],
+    appointments: Appointment[],
+    date: string,
+    startTime: string,
+    endTime: string
+  ): { availableCount: number; totalOnDuty: number; isFullyBooked: boolean } {
+    const slotStart = parseInt(startTime.replace(':', ''), 10);
+    const slotEnd = parseInt(endTime.replace(':', ''), 10);
+
+    let onDutyCount = 0;
+    let availableCount = 0;
+
+    optometrists.forEach((opt) => {
+      if (opt.status === 'offline') return;
+
+      const workStart = parseInt(opt.workStartTime.replace(':', ''), 10);
+      const workEnd = parseInt(opt.workEndTime.replace(':', ''), 10);
+      if (slotStart < workStart || slotEnd > workEnd) return;
+
+      onDutyCount++;
+
+      const hasConflict = appointments.some((a) => {
+        if (a.optometristId !== opt.id || a.date !== date || a.status === 'cancelled') return false;
+        const aStart = parseInt(a.startTime.replace(':', ''), 10);
+        const aEnd = parseInt(a.endTime.replace(':', ''), 10);
+        return !(slotEnd <= aStart || slotStart >= aEnd);
+      });
+
+      if (!hasConflict) {
+        availableCount++;
+      }
+    });
+
+    return {
+      availableCount,
+      totalOnDuty: onDutyCount,
+      isFullyBooked: onDutyCount > 0 && availableCount === 0
+    };
   }
 };
 

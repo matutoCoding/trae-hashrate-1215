@@ -123,6 +123,14 @@
     }
   }
 
+  &.partial {
+    border: 2rpx solid $color-warning;
+
+    .timeText {
+      color: $color-text-primary;
+    }
+  }
+
   &.disabled {
     background: $color-bg-hover;
     opacity: 0.6;
@@ -142,14 +150,37 @@
   font-size: $font-size-sm;
   font-weight: $font-weight-medium;
   color: $color-text-primary;
+
+  .selected & {
+    color: $color-text-white;
+  }
 }
 
-.timeTag {
+.timeTagFull,
+.timeTagPartial,
+.timeTagFree {
   position: absolute;
   top: 4rpx;
-  right: 8rpx;
-  font-size: 18rpx;
-  color: $color-text-tertiary;
+  right: 6rpx;
+  font-size: 16rpx;
+  padding: 2rpx 8rpx;
+  border-radius: $radius-xs;
+  font-weight: $font-weight-medium;
+}
+
+.timeTagFull {
+  background: $color-bg-tag-error;
+  color: $color-error;
+}
+
+.timeTagPartial {
+  background: $color-bg-tag-warning;
+  color: $color-warning;
+}
+
+.timeTagFree {
+  background: $color-bg-tag-success;
+  color: $color-success;
 }
 
 .selectedInfo {
@@ -360,4 +391,73 @@
     opacity: 0.9;
     transform: scale(0.98);
   }
+}
+
+.sectionHeader {
+  @include flex-between;
+  padding: $spacing-lg $page-padding $spacing-md;
+}
+
+.addOptBtn {
+  @include button-reset;
+  padding: $spacing-xs $spacing-md;
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  color: $color-text-white;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  border-radius: $radius-button;
+
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.96);
+  }
+}
+
+.optCardWrapper {
+  position: relative;
+  margin-bottom: $spacing-md;
+}
+
+.optActions {
+  position: absolute;
+  top: $spacing-md;
+  right: $spacing-md;
+  z-index: 2;
+}
+
+.optEditBtn {
+  font-size: $font-size-xs;
+  color: $color-primary;
+  background: rgba(14, 165, 233, 0.08);
+  padding: $spacing-xs $spacing-sm;
+  border-radius: $radius-sm;
+}
+
+.formRow {
+  display: flex;
+  gap: $spacing-md;
+
+  .formItem {
+    flex: 1;
+  }
+}
+
+.formPicker {
+  height: $button-height-md;
+  background: $color-bg-page;
+  border-radius: $radius-md;
+  padding: 0 $spacing-md;
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  @include flex-center($dir: row, $justify: flex-start);
+}
+
+.formHint {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  background: $color-bg-hover;
+  padding: $spacing-sm $spacing-md;
+  border-radius: $radius-sm;
+  margin-bottom: $spacing-md;
+  text-align: center;
 }
