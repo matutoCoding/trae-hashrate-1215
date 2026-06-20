@@ -1,0 +1,363 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  padding-bottom: 200rpx;
+}
+
+.header {
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-dark 100%);
+  padding: $spacing-xl $page-padding $spacing-lg * 2;
+  margin-bottom: -$spacing-lg;
+}
+
+.headerTitle {
+  display: block;
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-bold;
+  color: $color-text-white;
+}
+
+.headerSub {
+  display: block;
+  font-size: $font-size-sm;
+  color: rgba(255, 255, 255, 0.8);
+  margin-top: $spacing-xs;
+}
+
+.statsScroll {
+  padding: 0 $page-padding;
+  margin-bottom: $spacing-lg;
+}
+
+.statsRow {
+  display: flex;
+  gap: $spacing-md;
+  padding: $spacing-sm 0;
+}
+
+.sectionTitle {
+  display: block;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  padding: 0 $page-padding;
+  margin: $spacing-md 0 $spacing-md;
+}
+
+.dateScroll {
+  padding: 0 $page-padding;
+  margin-bottom: $spacing-lg;
+}
+
+.dateRow {
+  display: flex;
+  gap: $spacing-md;
+  padding: $spacing-sm 0;
+}
+
+.dateItem {
+  width: 110rpx;
+  padding: $spacing-md $spacing-sm;
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  text-align: center;
+  box-shadow: $shadow-card;
+  transition: all $transition-base;
+  flex-shrink: 0;
+
+  &.active {
+    background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  }
+
+  &:active {
+    transform: scale(0.96);
+  }
+}
+
+.dateWeekday {
+  display: block;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+
+  .active & {
+    color: rgba(255, 255, 255, 0.9);
+  }
+}
+
+.dateDay {
+  display: block;
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  margin-top: 4rpx;
+
+  .active & {
+    color: $color-text-white;
+  }
+}
+
+.timeGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: $spacing-md;
+  padding: 0 $page-padding;
+  margin-bottom: $spacing-lg;
+}
+
+.timeSlot {
+  padding: $spacing-md 0;
+  background: $color-bg-card;
+  border-radius: $radius-md;
+  text-align: center;
+  box-shadow: $shadow-card;
+  transition: all $transition-base;
+  position: relative;
+
+  &.selected {
+    background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+    box-shadow: $shadow-float;
+
+    .timeText {
+      color: $color-text-white;
+    }
+  }
+
+  &.disabled {
+    background: $color-bg-hover;
+    opacity: 0.6;
+
+    .timeText {
+      color: $color-text-disabled;
+      text-decoration: line-through;
+    }
+  }
+
+  &:active:not(.disabled) {
+    transform: scale(0.96);
+  }
+}
+
+.timeText {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+}
+
+.timeTag {
+  position: absolute;
+  top: 4rpx;
+  right: 8rpx;
+  font-size: 18rpx;
+  color: $color-text-tertiary;
+}
+
+.selectedInfo {
+  margin: 0 $page-padding $spacing-lg;
+  padding: $spacing-lg;
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-float;
+  border-left: 6rpx solid $color-primary;
+}
+
+.selectedInfoHeader {
+  @include flex-between;
+  margin-bottom: $spacing-md;
+}
+
+.selectedLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.selectedTime {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-primary;
+}
+
+.bookButton {
+  @include button-reset;
+  width: 100%;
+  height: $button-height-lg;
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  color: $color-text-white;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  border-radius: $radius-button;
+  transition: all $transition-base;
+
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.98);
+  }
+}
+
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.5);
+  z-index: 999;
+  @include flex-center;
+  padding: $page-padding;
+}
+
+.modalContent {
+  width: 100%;
+  background: $color-bg-card;
+  border-radius: $radius-xl;
+  padding: $spacing-xl;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.modalTitle {
+  display: block;
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  text-align: center;
+  margin-bottom: $spacing-xl;
+}
+
+.formItem {
+  margin-bottom: $spacing-lg;
+}
+
+.formLabel {
+  display: block;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-sm;
+}
+
+.formValue {
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+}
+
+.formInput {
+  width: 100%;
+  height: $button-height-md;
+  background: $color-bg-page;
+  border-radius: $radius-md;
+  padding: 0 $spacing-md;
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  box-sizing: border-box;
+}
+
+.assignedCard {
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.08) 0%, rgba(16, 185, 129, 0.08) 100%);
+  border: 2rpx solid $color-border-primary;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-lg;
+}
+
+.assignedHeader {
+  @include flex-between;
+  margin-bottom: $spacing-md;
+}
+
+.assignedLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.assignedScore {
+  font-size: $font-size-xs;
+  background: $color-primary;
+  color: $color-text-white;
+  padding: 4rpx 16rpx;
+  border-radius: $radius-round;
+  font-weight: $font-weight-semibold;
+}
+
+.assignedInfo {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  margin-bottom: $spacing-sm;
+}
+
+.assignedName {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+}
+
+.assignedTitle {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.assignedReason {
+  font-size: $font-size-xs;
+  color: $color-primary;
+  background: $color-bg-tag;
+  padding: $spacing-xs $spacing-sm;
+  border-radius: $radius-sm;
+  display: inline-block;
+}
+
+.typeRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-md;
+}
+
+.typeTag {
+  padding: $spacing-sm $spacing-lg;
+  background: $color-bg-page;
+  border-radius: $radius-button;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  transition: all $transition-base;
+
+  &.typeActive {
+    background: $color-primary;
+    color: $color-text-white;
+  }
+
+  &:active {
+    transform: scale(0.96);
+  }
+}
+
+.modalActions {
+  display: flex;
+  gap: $spacing-md;
+  margin-top: $spacing-xl;
+}
+
+.cancelBtn {
+  @include button-reset;
+  flex: 1;
+  height: $button-height-lg;
+  background: $color-bg-hover;
+  color: $color-text-secondary;
+  font-size: $font-size-md;
+  border-radius: $radius-button;
+}
+
+.confirmBtn {
+  @include button-reset;
+  flex: 1;
+  height: $button-height-lg;
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  color: $color-text-white;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  border-radius: $radius-button;
+
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.98);
+  }
+}

@@ -1,0 +1,80 @@
+@use '@/styles/variables.scss' as *;
+
+.card {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  min-width: 320rpx;
+  flex: 1;
+  transition: all $transition-base;
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+.cardHeader {
+  @include flex-between;
+  margin-bottom: $spacing-md;
+}
+
+.title {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  font-weight: $font-weight-medium;
+}
+
+.iconBadge {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: $radius-md;
+  @include flex-center;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+}
+
+.cardBody {
+  display: flex;
+  align-items: baseline;
+  gap: $spacing-xs;
+}
+
+.value {
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+}
+
+.unit {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.trend {
+  margin-top: $spacing-sm;
+  font-size: $font-size-xs;
+  padding: 4rpx 12rpx;
+  border-radius: $radius-xs;
+  display: inline-block;
+
+  &.trendsuccess {
+    color: $color-success;
+    background: $color-bg-tag-success;
+  }
+
+  &.trendwarning {
+    color: $color-warning;
+    background: $color-bg-tag-warning;
+  }
+
+  &.trenderror {
+    color: $color-error;
+    background: $color-bg-tag-error;
+  }
+
+  &.trendinfo {
+    color: $color-info;
+    background: $color-bg-tag;
+  }
+}

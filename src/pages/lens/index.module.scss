@@ -1,0 +1,346 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  padding-bottom: 200rpx;
+}
+
+.header {
+  background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+  padding: $spacing-xl $page-padding $spacing-lg * 2;
+  margin-bottom: -$spacing-lg;
+}
+
+.headerTitle {
+  display: block;
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-bold;
+  color: $color-text-white;
+}
+
+.headerSub {
+  display: block;
+  font-size: $font-size-sm;
+  color: rgba(255, 255, 255, 0.8);
+  margin-top: $spacing-xs;
+}
+
+.statsScroll {
+  padding: 0 $page-padding;
+  margin-bottom: $spacing-lg;
+}
+
+.statsRow {
+  display: flex;
+  gap: $spacing-md;
+  padding: $spacing-sm 0;
+}
+
+.searchRow {
+  padding: 0 $page-padding;
+  margin-bottom: $spacing-md;
+}
+
+.searchInput {
+  width: 100%;
+  height: $button-height-md;
+  background: $color-bg-card;
+  border-radius: $radius-button;
+  padding: 0 $spacing-lg;
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  box-shadow: $shadow-card;
+  box-sizing: border-box;
+}
+
+.tabScroll {
+  padding: 0 $page-padding;
+  margin-bottom: $spacing-md;
+}
+
+.tabRow {
+  display: flex;
+  gap: $spacing-md;
+  padding: $spacing-sm 0;
+}
+
+.tabItem {
+  padding: $spacing-sm $spacing-lg;
+  background: $color-bg-card;
+  border-radius: $radius-button;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  white-space: nowrap;
+  transition: all $transition-base;
+
+  &.tabActive {
+    background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+    color: $color-text-white;
+    font-weight: $font-weight-semibold;
+  }
+
+  &:active {
+    transform: scale(0.96);
+  }
+}
+
+.listContainer {
+  padding: 0 $page-padding;
+}
+
+.splitButton {
+  @include button-reset;
+  width: 100%;
+  height: $button-height-md;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(124, 58, 237, 0.1) 100%);
+  color: #7C3AED;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  border-radius: $radius-md;
+  margin-top: -$spacing-sm;
+  margin-bottom: $spacing-md;
+  border: 2rpx solid rgba(139, 92, 246, 0.3);
+  transition: all $transition-base;
+
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.98);
+  }
+}
+
+.splitHistory {
+  background: $color-bg-card;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  margin-top: -$spacing-sm;
+  margin-bottom: $spacing-md;
+  border: 2rpx dashed $color-border;
+}
+
+.splitHistoryTitle {
+  display: block;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-sm;
+}
+
+.splitItem {
+  @include flex-between;
+  padding: $spacing-sm 0;
+
+  & + & {
+    border-top: 1rpx solid $color-divider;
+  }
+}
+
+.splitItemLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.splitDate {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+}
+
+.splitOperator {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.splitItemRight {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+  align-items: flex-end;
+}
+
+.splitQty {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-error;
+}
+
+.splitRemaining {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.emptyState {
+  @include flex-center;
+  flex-direction: column;
+  padding: $spacing-xl * 2;
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-card;
+}
+
+.emptyIcon {
+  font-size: 64rpx;
+  margin-bottom: $spacing-md;
+}
+
+.emptyText {
+  font-size: $font-size-md;
+  color: $color-text-tertiary;
+}
+
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.5);
+  z-index: 999;
+  @include flex-center;
+  padding: $page-padding;
+}
+
+.modalContent {
+  width: 100%;
+  background: $color-bg-card;
+  border-radius: $radius-xl;
+  padding: $spacing-xl;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.modalTitle {
+  display: block;
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  text-align: center;
+  margin-bottom: $spacing-xl;
+}
+
+.batchInfoCard {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(124, 58, 237, 0.08) 100%);
+  border: 2rpx solid rgba(139, 92, 246, 0.2);
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-lg;
+}
+
+.batchName {
+  display: block;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.batchNo {
+  display: block;
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  font-family: monospace;
+  margin-top: 4rpx;
+}
+
+.batchStock {
+  display: block;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-top: $spacing-sm;
+}
+
+.stockHighlight {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: #7C3AED;
+}
+
+.formItem {
+  margin-bottom: $spacing-lg;
+}
+
+.formLabel {
+  display: block;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-sm;
+}
+
+.formInput {
+  width: 100%;
+  height: $button-height-md;
+  background: $color-bg-page;
+  border-radius: $radius-md;
+  padding: 0 $spacing-md;
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  box-sizing: border-box;
+}
+
+.formHint {
+  display: block;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  margin-top: $spacing-xs;
+}
+
+.quickQty {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  margin-bottom: $spacing-lg;
+  flex-wrap: wrap;
+}
+
+.quickLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.quickBtn {
+  padding: $spacing-xs $spacing-md;
+  background: $color-bg-page;
+  border-radius: $radius-sm;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  transition: all $transition-base;
+
+  &.quickActive {
+    background: #7C3AED;
+    color: $color-text-white;
+  }
+
+  &:active {
+    transform: scale(0.96);
+  }
+}
+
+.modalActions {
+  display: flex;
+  gap: $spacing-md;
+  margin-top: $spacing-xl;
+}
+
+.cancelBtn {
+  @include button-reset;
+  flex: 1;
+  height: $button-height-lg;
+  background: $color-bg-hover;
+  color: $color-text-secondary;
+  font-size: $font-size-md;
+  border-radius: $radius-button;
+}
+
+.confirmBtn {
+  @include button-reset;
+  flex: 1;
+  height: $button-height-lg;
+  background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+  color: $color-text-white;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  border-radius: $radius-button;
+
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.98);
+  }
+}

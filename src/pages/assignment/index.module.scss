@@ -1,0 +1,189 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  padding-bottom: 200rpx;
+}
+
+.header {
+  background: linear-gradient(135deg, $color-secondary-dark 0%, $color-secondary 100%);
+  padding: $spacing-xl $page-padding $spacing-lg * 2;
+  margin-bottom: -$spacing-lg;
+}
+
+.headerTitle {
+  display: block;
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-bold;
+  color: $color-text-white;
+}
+
+.headerSub {
+  display: block;
+  font-size: $font-size-sm;
+  color: rgba(255, 255, 255, 0.8);
+  margin-top: $spacing-xs;
+}
+
+.statsScroll {
+  padding: 0 $page-padding;
+  margin-bottom: $spacing-lg;
+}
+
+.statsRow {
+  display: flex;
+  gap: $spacing-md;
+  padding: $spacing-sm 0;
+}
+
+.sectionTitle {
+  display: block;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  padding: 0 $page-padding;
+  margin: $spacing-md 0 $spacing-md;
+}
+
+.workloadContainer {
+  padding: 0 $page-padding;
+  margin-bottom: $spacing-md;
+}
+
+.workloadItem {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  margin-bottom: $spacing-md;
+}
+
+.workloadHeader {
+  @include flex-between;
+  margin-bottom: $spacing-md;
+}
+
+.workloadName {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.workloadBadges {
+  display: flex;
+  gap: $spacing-sm;
+}
+
+.fragmentBadge {
+  font-size: $font-size-xs;
+  padding: 4rpx 12rpx;
+  border-radius: $radius-round;
+  background: $color-bg-tag-warning;
+  color: $color-warning;
+}
+
+.utilizationBadge {
+  font-size: $font-size-xs;
+  padding: 4rpx 16rpx;
+  border-radius: $radius-round;
+  font-weight: $font-weight-semibold;
+
+  &.lowLoad {
+    background: $color-bg-tag-success;
+    color: $color-success;
+  }
+
+  &.midLoad {
+    background: $color-bg-tag;
+    color: $color-info;
+  }
+
+  &.highLoad {
+    background: $color-bg-tag-warning;
+    color: $color-warning;
+  }
+}
+
+.workloadBar {
+  height: 12rpx;
+  background: $color-divider;
+  border-radius: $radius-round;
+  overflow: hidden;
+  margin-bottom: $spacing-sm;
+}
+
+.workloadFill {
+  height: 100%;
+  border-radius: $radius-round;
+  transition: width $transition-base;
+
+  &.lowLoad {
+    background: linear-gradient(90deg, $color-secondary 0%, $color-secondary-light 100%);
+  }
+
+  &.midLoad {
+    background: linear-gradient(90deg, $color-primary 0%, $color-primary-light 100%);
+  }
+
+  &.highLoad {
+    background: linear-gradient(90deg, $color-warning 0%, #FBBF24 100%);
+  }
+}
+
+.workloadFooter {
+  display: flex;
+  justify-content: space-between;
+}
+
+.workloadText {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.emptyState {
+  @include flex-center;
+  flex-direction: column;
+  padding: $spacing-xl * 2;
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-card;
+  margin: 0 $page-padding;
+}
+
+.emptyIcon {
+  font-size: 64rpx;
+  margin-bottom: $spacing-md;
+}
+
+.emptyText {
+  font-size: $font-size-md;
+  color: $color-text-tertiary;
+}
+
+.tipCard {
+  margin: $spacing-lg $page-padding;
+  padding: $spacing-lg;
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.08) 0%, rgba(16, 185, 129, 0.08) 100%);
+  border: 2rpx solid $color-border-primary;
+  border-radius: $radius-lg;
+}
+
+.tipTitle {
+  display: block;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-md;
+}
+
+.tipList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.tipItem {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  line-height: $line-height-loose;
+}

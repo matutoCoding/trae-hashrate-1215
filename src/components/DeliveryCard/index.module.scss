@@ -1,0 +1,159 @@
+@use '@/styles/variables.scss' as *;
+
+.card {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  margin-bottom: $spacing-md;
+  transition: all $transition-base;
+
+  &:active {
+    transform: scale(0.98);
+    box-shadow: $shadow-card-hover;
+  }
+}
+
+.header {
+  @include flex-between;
+  margin-bottom: $spacing-sm;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.deliveryNo {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  font-family: monospace;
+}
+
+.date {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.statusBadge {
+  font-size: $font-size-xs;
+  padding: 4rpx 16rpx;
+  border-radius: $radius-round;
+  font-weight: $font-weight-medium;
+}
+
+.customerInfo {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  margin-bottom: $spacing-md;
+}
+
+.customerName {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.customerPhone {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.itemsList {
+  background: $color-bg-page;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  margin-bottom: $spacing-md;
+}
+
+.itemRow {
+  @include flex-between;
+  padding: $spacing-xs 0;
+
+  & + & {
+    border-top: 1rpx solid $color-divider;
+    padding-top: $spacing-sm;
+    margin-top: $spacing-xs;
+  }
+}
+
+.itemInfo {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.itemBrand {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+}
+
+.itemModel {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.itemRight {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+}
+
+.itemQty {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.itemPrice {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+}
+
+.paramsRow {
+  display: flex;
+  gap: $spacing-lg;
+  margin-bottom: $spacing-md;
+  padding-bottom: $spacing-md;
+  border-bottom: 1rpx solid $color-divider;
+}
+
+.param {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.paramLabel {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.paramValue {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+}
+
+.footer {
+  @include flex-between;
+}
+
+.optometrist {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.total {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.totalAmount {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $color-primary;
+}
